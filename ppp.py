@@ -2,32 +2,37 @@ from picamera import PiCamera
 from time import sleep
 import RPi.GPIO as IO
 import time
-
-
-
-IO.setwarnings(False)
-IO.setmode(IO.BCM)
-
-IO.setup(2,IO.OUT) #GPIO 2 -> Red LED as output
-IO.setup(3,IO.OUT) #GPIO 3 -> Green LED as output
-IO.setup(14,IO.IN) #GPIO 14 -> IR sensor as input
+from datetime import datetime
 
 TRIG = 15
 ECHO = 18
+currentDistance = 0
 
-IO.setup(23,IO.OUT) #GPIO 23 -> Red LED as output
-IO.setup(24,IO.OUT) #GPIO 24 -> Green LED as output
+def init_gpio():
+    IO.setwarnings(False)
+    IO.setmode(IO.BCM)
+
+    IO.setup(2,IO.OUT) #GPIO 2 -> Red LED as output
+    IO.setup(3,IO.OUT) #GPIO 3 -> Green LED as output
+    IO.setup(14,IO.IN) #GPIO 14 -> IR sensor as input
+
+    IO.setup(23,IO.OUT) #GPIO 23 -> Red LED as output
+    IO.setup(24,IO.OUT) #GPIO 24 -> Green LED as output
+
+    IO.setup(TRIG, IO.OUT)
+    IO.setup(ECHO, IO.IN)
 
 
+#program that take a pic after sleeping 5 sec
+#and save it on /home/pi/Desktop/image.jpg
+def take_picture():
+	camera = PiCamera()
+	camera.start_preview()
+	sleep(5)
+	camera.capture('/home/pi/Desktop/' + str(datetime.now().time()) + '.jpg')
+	camera.stop_preview()
 
-
-print("Distance Measurement In Progress")
-
-IO.setup(TRIG, IO.OUT)
-IO.setup(ECHO, IO.IN)
-currentDistance=0
-
-while 1:
+def calculate_distance():
     IO.output(TRIG, False)
     print ("Waiting For Sensor To Settle")
     time.sleep(2)
@@ -45,33 +50,23 @@ while 1:
 
     pulse_duration = pulse_end - pulse_start
     distance = pulse_duration * 17150
+    return round(distance, 2)
 
-    distance = round(distance, 2)
-    print("Distance: ", distance, " cm")
-    if currentDistance != distance:
-	#program that take a pic after sleeping 5 sec
-	#and save it on /home/pi/Desktop/image.jpg
-	
-	camera = PiCamera()
+def is_there_any_changement(newDistance):
+    global currentDistance
+    print("Distance: ", newDistance, " cm")
+    if currentDistance != newDistance:
+        currentDistance = newDistance
+        return True
+    return False
 
-	camera.start_preview()
-	sleep(5)
-	camera.capture('/home/pi/Desktop/' + str(pulse_end) + '.jpg')
-	camera.stop_preview()
-	
-    currentDistance = distance
-	
-    
-
-#while 1:
- #   if(IO.input(14)==True): #object is far away
-  #      IO.output(2,True) #Red led ON
-   #     IO.output(3,False) # Green led OFF
-    
-    #if(IO.input(14)==False): #object is near
-     #   IO.output(3,True) #Green led ON
-      #  IO.output(2,False) # Red led OFF
-    
+def main():
+    while 1:
+        init_gpio()
+        newDistance = calculate_distance()
+        if is_there_any_changement(newDistance) :
+            take_picture()
 
 
 
+main()
