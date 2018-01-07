@@ -3,6 +3,8 @@ from time import sleep
 import RPi.GPIO as IO
 import time
 
+
+
 IO.setwarnings(False)
 IO.setmode(IO.BCM)
 
@@ -16,10 +18,14 @@ ECHO = 18
 IO.setup(23,IO.OUT) #GPIO 23 -> Red LED as output
 IO.setup(24,IO.OUT) #GPIO 24 -> Green LED as output
 
+
+
+
 print("Distance Measurement In Progress")
 
 IO.setup(TRIG, IO.OUT)
 IO.setup(ECHO, IO.IN)
+currentDistance=0
 
 while 1:
     IO.output(TRIG, False)
@@ -42,6 +48,20 @@ while 1:
 
     distance = round(distance, 2)
     print("Distance: ", distance, " cm")
+    if currentDistance != distance:
+	#program that take a pic after sleeping 5 sec
+	#and save it on /home/pi/Desktop/image.jpg
+	
+	camera = PiCamera()
+
+	camera.start_preview()
+	sleep(5)
+	camera.capture('/home/pi/Desktop/' + str(pulse_end) + '.jpg')
+	camera.stop_preview()
+	
+    currentDistance = distance
+	
+    
 
 #while 1:
  #   if(IO.input(14)==True): #object is far away
@@ -53,13 +73,5 @@ while 1:
       #  IO.output(2,False) # Red led OFF
     
 
-#program that take a pic after sleeping 5 sec
-#and save it on /home/pi/Desktop/image.jpg
 
-#camera = PiCamera()
-
-#camera.start_preview()
-#sleep(5)
-#camera.capture('/home/pi/Desktop/image.jpg')
-#camera.stop_preview()
 
